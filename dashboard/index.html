@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Token Radar — pre-token protocols ranked by implied value</title>
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand"><span class="brand-mark"></span>Token&nbsp;Radar</div>
+  <div class="topmeta">
+    <span id="meta-snapshot">Snapshot —</span>
+    <span id="meta-model">model —</span>
+    <span>Data: DefiLlama protocol index, frozen</span>
+  </div>
+</header>
+
+<main>
+  <section class="intro">
+    <h1>Protocols with no token yet, ranked by what a token would be worth</h1>
+    <p class="lede">Every protocol on the snapshot's watchlist is here, plus the early pre-token protocols
+    below its floor. Implied value is this page's own model — a category multiple on TVL, answered for
+    growth, maturity, chain breadth and size — never a prediction that a token will launch.
+    Select any row for its figures and its farm plan.</p>
+    <div class="stats" id="stats"></div>
+  </section>
+
+  <section class="toolbar" aria-label="Board controls">
+    <label class="ctl grow">Search
+      <input id="q" type="search" placeholder="Name, slug, category or chain" autocomplete="off">
+    </label>
+    <label class="ctl">Category
+      <select id="f-category"><option value="">All categories</option></select>
+    </label>
+    <label class="ctl">Chain
+      <select id="f-chain"><option value="">All chains</option></select>
+    </label>
+    <label class="ctl check">
+      <input id="f-watch" type="checkbox"> Watchlist only
+    </label>
+    <span class="shown" id="shown"></span>
+  </section>
+
+  <section class="boardwrap">
+    <table id="board">
+      <thead>
+        <tr>
+          <th data-key="rank" class="num sortable">Rank</th>
+          <th data-key="name" class="sortable">Protocol</th>
+          <th data-key="tvl" class="num sortable">TVL</th>
+          <th data-key="change" class="num sortable">7d change</th>
+          <th data-key="age" class="num sortable">Age</th>
+          <th data-key="chains" class="num sortable">Chains</th>
+          <th data-key="implied" class="num sortable">Implied value</th>
+        </tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+    <p class="empty" id="empty" hidden>No protocol matches those filters. Clear the search or widen the filters.</p>
+  </section>
+
+  <section class="modelcard">
+    <h2>How the ranking is made — model radar-2</h2>
+    <p>One function scores every protocol from the snapshot's figures; no name is special-cased.</p>
+    <p class="formula">implied value = TVL &times; category multiple &times; growth factor &times; maturity factor &times; breadth factor &times; scale factor</p>
+    <ul class="factors">
+      <li><b>Category multiple</b> — what a launched token in this category is worth per $1 of TVL: chains 1.50, prediction markets 1.40, derivatives 1.30, DEXs 1.10, lending 0.85, yield vaults 0.50–0.55, farms 0.45.</li>
+      <li><b>Growth factor</b> — exp(0.55 &times; 7-day TVL change), the change clamped to −80%…+200%; unreported growth counts as 0.</li>
+      <li><b>Maturity factor</b> — 0.55 + 0.45 &times; (1 − exp(−age / 900 days)): years run with no token count, with diminishing returns; an unknown listing date counts as 540 days.</li>
+      <li><b>Breadth factor</b> — 1 + 0.055 per doubling of the chain count: more chains, more holders a token can launch into.</li>
+      <li><b>Scale factor</b> — (TVL / $100M)<sup>−0.06</sup>: launched tokens trade at lower value-to-TVL ratios the larger the protocol already is.</li>
+    </ul>
+    <p>The board covers the whole watchlist — pre-token protocols at or above the snapshot's $50M floor that are
+    not a wrapped, staked or bridged product of a token that already trades — and adds the other pre-token
+    protocols with the most TVL under the same product rules. Protocols that already have a token are not
+    ranked: their value is a market fact, not a model's claim.</p>
+  </section>
+
+  <footer id="footer"></footer>
+</main>
+
+<aside id="detail" class="detail" aria-hidden="true"></aside>
+<div id="scrim" class="scrim" hidden></div>
+
+<script src="../data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
