@@ -66,7 +66,7 @@
     <p class="formula">implied value = TVL &times; category multiple &times; growth factor &times; maturity factor &times; breadth factor &times; scale factor</p>
     <ul class="factors">
       <li><b>Category multiple</b> — what a launched token in this category is worth per $1 of TVL: chains 1.50, prediction markets 1.40, derivatives 1.30, DEXs 1.10, lending 0.85, yield vaults 0.50–0.55, farms 0.45.</li>
-      <li><b>Growth factor</b> — exp(0.55 &times; 7-day TVL change), the change clamped to −80%…+200%; unreported growth counts as 0.</li>
+      <li><b>Growth factor</b> — exp(0.55 &times; 7-day TVL change), the change clamped to −80%…+200% and discounted by a size-trust term, TVL / (TVL + $25M): a doubling week at $5M of TVL barely counts, the same week at $500M counts almost in full. Unreported growth counts as 0.</li>
       <li><b>Maturity factor</b> — 0.55 + 0.45 &times; (1 − exp(−age / 900 days)): years run with no token count, with diminishing returns; an unknown listing date counts as 540 days.</li>
       <li><b>Breadth factor</b> — 1 + 0.055 per doubling of the chain count: more chains, more holders a token can launch into.</li>
       <li><b>Scale factor</b> — (TVL / $100M)<sup>−0.06</sup>: launched tokens trade at lower value-to-TVL ratios the larger the protocol already is.</li>

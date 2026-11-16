@@ -11,13 +11,16 @@
 //
 //   implied = round( tvl_usd
 //                    x category_multiple   what a launched token in this category is worth per $1 of TVL
-//                    x growth_factor       exp(0.55 x clamp(change_7d, -80, 200) / 100), null growth = 0
+//                    x growth_factor       exp(0.55 x trusted change_7d / 100), the change clamped to
+//                                          [-80, 200] and discounted by a size-trust term (below)
 //                    x maturity_factor     0.55 + 0.45 x (1 - exp(-age_days / 900)); unknown age = 540d
 //                    x breadth_factor      1 + 0.055 x log2(chains), one chain = 1
 //                    x scale_factor )      (tvl_usd / 1e8)^-0.06, clamped to [0.6, 1.5]
 //
 // Growth is answered exponentially so a doubling week is worth more than two +50% weeks and a crash
-// week is punished smoothly, with no cliff at the clamps. Maturity saturates: a protocol that has run
+// week is punished smoothly, with no cliff at the clamps — but a weekly change is only as believable
+// as the TVL it moves, so the change is first multiplied by tvl / (tvl + $25M): at $5M of TVL a
+// doubling week counts for a sixth of its face value, at $500M almost in full. Maturity saturates: a protocol that has run
 // three years with no token is a stronger launch candidate than a three-month one, but the tenth year
 // adds little the third did not. Breadth pays for distribution a token can launch into. Scale bends
 // the multiple down as TVL grows, because launched tokens trade at lower value-to-TVL ratios the
@@ -55,6 +58,7 @@ export const MODEL = {
   growth_rate: 0.55,
   growth_floor_pct: -80,
   growth_cap_pct: 200,
+  growth_trust_usd: 25_000_000,
   maturity_base: 0.55,
   maturity_span: 0.45,
   maturity_tau_days: 900,
@@ -177,11 +181,12 @@ export function ageDays(asOf: string, listedAt: string | null): number | null {
   return Math.max(0, Math.floor((a - b) / DAY_MS));
 }
 
-/** The five factors of one protocol's implied value, and the value itself. */
+/** The score's factors of one protocol, and the value itself. */
 export interface Score {
   implied_value_usd: number;
   category_multiple: number;
   growth_factor: number;
+  growth_trust: number;
   maturity_factor: number;
   breadth_factor: number;
   scale_factor: number;
@@ -192,8 +197,9 @@ export interface Score {
 export function score(p: SnapshotProtocol, asOf: string): Score {
   const age = ageDays(asOf, p.listed_at);
   const multiple = categoryMultiple(p.category);
-  const growthPct = Math.min(MODEL.growth_cap_pct, Math.max(MODEL.growth_floor_pct, p.change_7d ?? 0));
-  const growth = Math.exp((MODEL.growth_rate * growthPct) / 100);
+  const rawPct = Math.min(MODEL.growth_cap_pct, Math.max(MODEL.growth_floor_pct, p.change_7d ?? 0));
+  const trust = p.tvl_usd / (p.tvl_usd + MODEL.growth_trust_usd);
+  const growth = Math.exp((MODEL.growth_rate * rawPct * trust) / 100);
   const ageForModel = age ?? MODEL.unknown_age_days;
   const maturity = MODEL.maturity_base + MODEL.maturity_span * (1 - Math.exp(-ageForModel / MODEL.maturity_tau_days));
   const breadth = 1 + MODEL.breadth_per_doubling * Math.log2(Math.max(1, p.chains.length));
@@ -204,6 +210,7 @@ export function score(p: SnapshotProtocol, asOf: string): Score {
     implied_value_usd: implied,
     category_multiple: multiple,
     growth_factor: growth,
+    growth_trust: trust,
     maturity_factor: maturity,
     breadth_factor: breadth,
     scale_factor: scale,
@@ -227,6 +234,7 @@ export interface BoardRow {
   model: {
     category_multiple: number;
     growth_factor: number;
+    growth_trust: number;
     maturity_factor: number;
     breadth_factor: number;
     scale_factor: number;
@@ -275,6 +283,7 @@ export function buildBoard(snapshot: Snapshot): BoardRow[] {
     model: {
       category_multiple: round4(s.category_multiple),
       growth_factor: round4(s.growth_factor),
+      growth_trust: round4(s.growth_trust),
       maturity_factor: round4(s.maturity_factor),
       breadth_factor: round4(s.breadth_factor),
       scale_factor: round4(s.scale_factor),

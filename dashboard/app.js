@@ -48,8 +48,9 @@
     return 0.7;
   }
   function recompute(r) {
-    var g = Math.min(200, Math.max(-80, r.change_7d === null ? 0 : r.change_7d));
-    var growth = Math.exp(0.55 * g / 100);
+    var raw = Math.min(200, Math.max(-80, r.change_7d === null ? 0 : r.change_7d));
+    var trust = r.tvl_usd / (r.tvl_usd + 25e6);
+    var growth = Math.exp(0.55 * raw * trust / 100);
     var age = r.age_days === null ? 540 : r.age_days;
     var maturity = 0.55 + 0.45 * (1 - Math.exp(-age / 900));
     var breadth = 1 + 0.055 * Math.log2(Math.max(1, r.chains.length));
@@ -236,12 +237,13 @@
     var m = r.model;
     detail.appendChild(factorRow('Category', '×' + m.category_multiple.toFixed(2), (m.category_multiple / 1.5) * 100));
     detail.appendChild(factorRow('Growth', '×' + m.growth_factor.toFixed(2), (m.growth_factor / 3) * 100));
+    detail.appendChild(factorRow('Growth trust', '×' + m.growth_trust.toFixed(2), m.growth_trust * 100, 'How much of the weekly change the model believes, from TVL size'));
     detail.appendChild(factorRow('Maturity', '×' + m.maturity_factor.toFixed(2), m.maturity_factor * 100));
     detail.appendChild(factorRow('Breadth', '×' + m.breadth_factor.toFixed(2), ((m.breadth_factor - 1) / 0.3) * 100));
     detail.appendChild(factorRow('Scale', '×' + m.scale_factor.toFixed(2), (m.scale_factor / 1.5) * 100));
     var check = recompute(r);
     var eq = el('p', 'eq');
-    eq.appendChild(document.createTextNode(fmtUsd(r.tvl_usd) + ' TVL through the five factors gives '));
+    eq.appendChild(document.createTextNode(fmtUsd(r.tvl_usd) + ' TVL through its model factors gives '));
     eq.appendChild(el('b', null, fmtUsd(r.implied_value_usd)));
     eq.appendChild(document.createTextNode(check === r.implied_value_usd
       ? '. This page recomputes the row from its raw figures and lands on the same number.'
